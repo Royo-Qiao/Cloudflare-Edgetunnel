@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.local
+# 部署时缓存的 worker 与本地产物
+.cache/
+worker-cache/
+deploy-tmp/

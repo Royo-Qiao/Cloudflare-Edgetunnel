@@ -1,0 +1,19 @@
+{
+  "name": "cloudflare-edge-tunnel",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Cloudflare edgetunnel 一键部署 + 优选 IP 工具，本地 Web 界面配置",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "deploy": "node scripts/deploy-cli.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "wrangler": "^4.99.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
