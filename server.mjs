@@ -8,7 +8,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { verifyToken, listZones, getPagesProject, listPagesDomains } from './lib/cf-api.mjs';
+import { verifyToken, listZones, getPagesProject, listPagesDomains, canAccess } from './lib/cf-api.mjs';
 import { deploy } from './lib/deploy.mjs';
 import { buildCandidates, testBatch, toADDContent } from './lib/optimize-ips.mjs';
 import { MD5MD5, genUUID } from './lib/md5.mjs';
@@ -28,16 +28,34 @@ const wrap = (fn) => (req, res) => Promise.resolve(fn(req, res)).catch((e) => {
 
 /* ---------------- 端点 ---------------- */
 
-/** 验证 token + 列 zones */
+/** 验证 token + 列 zones + 探测权限 */
 app.post('/api/verify-token', wrap(async (req, res) => {
   const { token } = req.body || {};
   if (!token) throw new Error('缺少 token');
   const v = await verifyToken(token);
   if (v.status !== 'active') throw new Error('Token 不可用');
   const zones = await listZones(token);
+  const accountId = zones[0]?.account?.id;
+
+  // 权限自检：探测各接口是否可调
+  const perms = {};
+  perms['Zone:Read'] = true; // listZones 成功即说明有
+  if (zones[0]) {
+    perms['Zone:DNS:Edit'] = await canAccess(token, `/zones/${zones[0].id}/dns_records?per_page=1`);
+  }
+  if (accountId) {
+    perms['Account:Workers KV:Edit'] = await canAccess(token, `/accounts/${accountId}/storage/kv/namespaces`);
+    perms['Account:Pages:Edit'] = await canAccess(token, `/accounts/${accountId}/pages/projects`);
+    perms['Account:Workers Scripts:Edit'] = await canAccess(token, `/accounts/${accountId}/workers/scripts`);
+  }
+  const missing = Object.entries(perms).filter(([, ok]) => !ok).map(([k]) => k);
+
   res.json({
     success: true,
+    accountId,
     zones: zones.map((z) => ({ id: z.id, name: z.name, status: z.status })),
+    perms,
+    missing,
   });
 }));
 

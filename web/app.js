@@ -113,6 +113,7 @@ async function verify() {
   if (!token) return;
   verifyBtn.disabled = true;
   verifyBtn.textContent = '验证中…';
+  $('perms').classList.add('hidden');
   try {
     const res = await fetch('/api/verify-token', {
       method: 'POST',
@@ -123,14 +124,40 @@ async function verify() {
     if (!data.success) throw new Error(data.error || '验证失败');
     STATE.token = token;
     STATE.zones = data.zones;
-    toast(`验证成功，${data.zones.length} 个域名`);
-    setupStep2();
-    setTimeout(() => goStep(2), 800);
+    STATE.accountId = data.accountId;
+
+    // 渲染权限清单
+    renderPerms(data.perms, data.missing);
+
+    if (data.missing.length === 0) {
+      toast(`验证成功，${data.zones.length} 个域名，权限齐全`);
+      setupStep2();
+      setTimeout(() => goStep(2), 1000);
+    } else {
+      toast(`缺少 ${data.missing.length} 项权限，无法部署`);
+    }
   } catch (e) {
     toast(e.message);
     verifyBtn.disabled = false;
     verifyBtn.textContent = '验证';
   }
+}
+
+function renderPerms(perms, missing) {
+  const box = $('perms');
+  box.classList.remove('hidden');
+  const allOk = missing.length === 0;
+  const rows = Object.entries(perms).map(([k, ok]) => {
+    const ico = ok ? '✓' : '✗';
+    return `<div class="perm-row ${ok ? 'ok' : 'err'}"><span class="ico">${ico}</span><span>${k}</span></div>`;
+  }).join('');
+  const warn = allOk ? '' : `
+    <p class="perm-warn">缺少权限，部署会在第 3 步失败。请到
+      <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">Cloudflare Dashboard</a>
+      创建含以上权限的 Token 后重新粘贴。</p>`;
+  box.innerHTML = `<div class="perm-list">${rows}</div>${warn}`;
+  verifyBtn.textContent = allOk ? '已验证 ✓' : '重新验证';
+  verifyBtn.disabled = false;
 }
 
 /* ---------- Step 2: 配置 ---------- */

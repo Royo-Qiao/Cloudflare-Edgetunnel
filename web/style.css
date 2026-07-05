@@ -252,6 +252,39 @@ textarea { resize: vertical; min-height: 48px; }
   color: var(--text);
 }
 
+/* ---------- 权限清单 ---------- */
+.perms {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.perm-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+}
+.perm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-family: var(--mono);
+}
+.perm-row .ico { width: 14px; text-align: center; }
+.perm-row.ok .ico { color: var(--ok); }
+.perm-row.err { color: var(--err); }
+.perm-row.err .ico { color: var(--err); }
+.perm-warn {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+.perm-warn a { color: var(--accent); }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed;
