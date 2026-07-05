@@ -37,16 +37,16 @@ app.post('/api/verify-token', wrap(async (req, res) => {
   const zones = await listZones(token);
   const accountId = zones[0]?.account?.id;
 
-  // 权限自检：探测各接口是否可调
+  // 权限自检：探测各接口是否可调（名称与 Cloudflare Dashboard 一致）
   const perms = {};
-  perms['Zone:Read'] = true; // listZones 成功即说明有
+  perms['Zone · Zone · Read'] = true; // listZones 成功即说明有
   if (zones[0]) {
-    perms['Zone:DNS:Edit'] = await canAccess(token, `/zones/${zones[0].id}/dns_records?per_page=1`);
+    perms['Zone · DNS · Edit'] = await canAccess(token, `/zones/${zones[0].id}/dns_records?per_page=1`);
   }
   if (accountId) {
-    perms['Account:Workers KV:Edit'] = await canAccess(token, `/accounts/${accountId}/storage/kv/namespaces`);
-    perms['Account:Pages:Edit'] = await canAccess(token, `/accounts/${accountId}/pages/projects`);
-    perms['Account:Workers Scripts:Edit'] = await canAccess(token, `/accounts/${accountId}/workers/scripts`);
+    perms['Account · Workers Scripts · Edit'] = await canAccess(token, `/accounts/${accountId}/workers/scripts`);
+    perms['Account · Workers KV Storage · Edit'] = await canAccess(token, `/accounts/${accountId}/storage/kv/namespaces`);
+    perms['Account · Cloudflare Pages · Edit'] = await canAccess(token, `/accounts/${accountId}/pages/projects`);
   }
   const missing = Object.entries(perms).filter(([, ok]) => !ok).map(([k]) => k);
 

@@ -152,9 +152,10 @@ function renderPerms(perms, missing) {
     return `<div class="perm-row ${ok ? 'ok' : 'err'}"><span class="ico">${ico}</span><span>${k}</span></div>`;
   }).join('');
   const warn = allOk ? '' : `
-    <p class="perm-warn">缺少权限，部署会在第 3 步失败。请到
+    <p class="perm-warn">缺少以下权限，部署会在第 3 步失败。请到
       <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">Cloudflare Dashboard</a>
-      创建含以上权限的 Token 后重新粘贴。</p>`;
+      创建 Custom Token 并勾选：</p>
+    <ul class="perm-missing">${missing.map((m) => `<li>${m}</li>`).join('')}</ul>`;
   box.innerHTML = `<div class="perm-list">${rows}</div>${warn}`;
   verifyBtn.textContent = allOk ? '已验证 ✓' : '重新验证';
   verifyBtn.disabled = false;

@@ -284,6 +284,14 @@ textarea { resize: vertical; min-height: 48px; }
   color: var(--text-dim);
 }
 .perm-warn a { color: var(--accent); }
+.perm-missing {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 12.5px;
+  font-family: var(--mono);
+  color: var(--err);
+}
+.perm-missing li { margin: 3px 0; }
 
 /* ---------- Toast ---------- */
 .toast {
