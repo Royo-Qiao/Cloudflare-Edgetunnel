@@ -144,12 +144,20 @@ app.post('/api/optimize-ips', (req, res) => {
   });
 });
 
-/** 查状态：Pages 项目、自定义域、节点数 */
+/** 查状态：Pages 项目、自定义域、节点数。按前端契约显式塑形。 */
 app.post('/api/status', wrap(async (req, res) => {
   const { token, accountId, projectName = 'edt-pages', host, uuid } = req.body || {};
-  const out = {};
-  try { out.project = await getPagesProject(token, accountId, projectName); } catch { out.project = null; }
-  try { out.domains = await listPagesDomains(token, accountId, projectName); } catch { out.domains = []; }
+  const out = { project: null, domains: [] };
+
+  try {
+    const proj = await getPagesProject(token, accountId, projectName);
+    if (proj) out.project = { name: proj.name, subdomain: proj.subdomain || '' };
+  } catch { /* 项目不存在或无权限 */ }
+  try {
+    const domains = await listPagesDomains(token, accountId, projectName);
+    out.domains = (domains || []).map((d) => ({ name: d.name, status: d.status }));
+  } catch { /* 忽略 */ }
+
   if (host && uuid) {
     try {
       const subToken = MD5MD5(host + uuid);

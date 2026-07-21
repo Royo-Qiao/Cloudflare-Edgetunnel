@@ -1,124 +1,263 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edgetunnel 配置</title>
-  <link rel="stylesheet" href="style.css" />
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waystation · 驿站</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23c96442'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
-    <!-- 进度条 -->
-    <header class="progress">
-      <div class="dots" id="dots">
-        <span class="dot" data-step="1"></span>
-        <span class="dot" data-step="2"></span>
-        <span class="dot" data-step="3"></span>
-        <span class="dot" data-step="4"></span>
-        <span class="dot" data-step="5"></span>
+
+<header class="shell" data-od-id="app-shell">
+  <div class="wordmark" data-od-id="wordmark">Edgetunnel<span class="wm-sep">·</span><span class="wm-zh">Cloudflare</span></div>
+  <span class="badge" data-od-id="local-badge"><span class="badge-dot"></span>一切在本地运行</span>
+</header>
+
+<nav class="step-rail" id="stepRail" data-od-id="step-rail" aria-label="部署步骤"></nav>
+
+<main class="container">
+
+  <!-- ═══════════ S1 认证 · 授权 ═══════════ -->
+  <section class="screen" id="screen1" data-od-id="screen-auth">
+    <p class="eyebrow" data-od-id="auth-eyebrow">第 1 步 · 授权</p>
+    <h1 data-od-id="auth-heading">在 Cloudflare 边缘，<br>搭建你的免费代理节点</h1>
+    <p class="lead" data-od-id="auth-lead">5 分钟一键完成 VLESS 节点部署与 IP 优选。</p>
+
+    <div class="error-banner hidden" id="errorBanner" data-od-id="auth-error-banner" role="alert">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"></circle><path d="M8 5v3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><circle cx="8" cy="11" r="0.9" fill="currentColor"></circle></svg>
+      <span id="errorText"></span>
+    </div>
+
+    <div class="field" data-od-id="token-field">
+      <label class="field-label" for="tokenInput">Cloudflare API Token</label>
+      <div class="token-wrap">
+        <input id="tokenInput" data-od-id="token-input" type="password" placeholder="粘贴你的 API Token…" autocomplete="off" spellcheck="false">
+        <button type="button" class="token-toggle" id="tokenToggle" data-od-id="token-toggle" aria-label="显示 Token">
+          <svg id="eyeOn" width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true"><path d="M1.5 8.5S4 4.2 8.5 4.2 15.5 8.5 15.5 8.5 13 12.8 8.5 12.8 1.5 8.5 1.5 8.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"></path><circle cx="8.5" cy="8.5" r="2.2" stroke="currentColor" stroke-width="1.4"></circle></svg>
+          <svg id="eyeOff" class="hidden" width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true"><path d="M3 3l11 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path><path d="M6.8 4.6A7.6 7.6 0 0 1 8.5 4.2c4.5 0 7 4.3 7 4.3a13.6 13.6 0 0 1-2.3 2.6M4.4 5.7A12.9 12.9 0 0 0 1.5 8.5S4 12.8 8.5 12.8c.7 0 1.4-.1 2-.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </button>
       </div>
-      <p class="step-title" id="stepTitle">认证</p>
-    </header>
+      <span class="field-help">在 <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener">Cloudflare Dashboard</a> 创建 Custom Token，需要以下权限：</span>
+    </div>
 
-    <!-- Step 1: 认证 -->
-    <section class="step" id="step1">
-      <label class="field">
-        <span class="label">Cloudflare API Token</span>
-        <textarea id="token" placeholder="粘贴你的 API Token…" rows="2" autocomplete="off" spellcheck="false"></textarea>
-      </label>
-      <p class="hint">
-        在 <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">Cloudflare Dashboard</a> 创建，
-        需 <code>Zone:Read + DNS:Edit + Workers:Edit + KV:Edit + Pages:Edit</code>。
-      </p>
-      <button class="btn primary" id="verifyBtn" disabled>验证</button>
-      <div class="perms hidden" id="perms"></div>
-    </section>
+    <ul class="perm-chips" data-od-id="perm-chips">
+      <li><code>Zone : Zone : Read</code></li>
+      <li><code>Zone : DNS : Edit</code></li>
+      <li><code>Account : Workers Scripts : Edit</code></li>
+      <li><code>Account : Workers KV Storage : Edit</code></li>
+      <li><code>Account : Cloudflare Pages : Edit</code></li>
+    </ul>
 
-    <!-- Step 2: 配置 -->
-    <section class="step hidden" id="step2">
-      <label class="field">
-        <span class="label">域名 (Zone)</span>
-        <select id="zone"></select>
-      </label>
-      <label class="field">
-        <span class="label">子域名</span>
-        <div class="inline">
-          <input id="subdomain" type="text" value="cf-proxy" spellcheck="false" />
-          <span class="suffix" id="zoneSuffix">.example.com</span>
+    <div class="actions" data-od-id="auth-actions">
+      <button class="btn btn-primary" id="verifyBtn" data-od-id="verify-btn" disabled="">已验证 ✓</button>
+    </div>
+
+    <div class="panel hidden" id="permsPanel" data-od-id="perms-panel">
+      <div class="panel-head">
+        <h2>权限检查</h2>
+        <span class="summary" id="permsSummary"></span>
+      </div>
+      <div class="perm-grid" id="permGrid"></div>
+      <div class="perm-warn hidden" id="permWarn">
+        缺少以下权限，部署会在第 3 步失败。请到
+        <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener">Cloudflare Dashboard</a>
+        编辑 Token 并勾选：
+        <ul id="permMissing"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ S2 配置 · 参数设置 ═══════════ -->
+  <section class="screen hidden" id="screen2" data-od-id="screen-config">
+    <p class="eyebrow" data-od-id="config-eyebrow">第 2 步 · 配置</p>
+    <h1 data-od-id="config-heading">选择域名，生成节点参数</h1>
+    <p class="lead" data-od-id="config-lead">节点将部署到所选域名的一个子域上；UUID 是节点的身份标识，已为你自动生成。</p>
+
+    <div class="field" id="zoneField" data-od-id="zone-field">
+      <label class="field-label" for="zoneInput">域名（Zone）</label>
+      <div class="select-wrap">
+        <select id="zoneInput" data-od-id="zone-input"></select>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.5 5.5L7 9l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+    </div>
+
+    <div class="field" data-od-id="sub-field">
+      <label class="field-label" for="subInput">子域名</label>
+      <div class="suffix-group">
+        <input id="subInput" data-od-id="sub-input" type="text" value="cf-proxy" autocomplete="off" spellcheck="false">
+        <span class="suffix" id="zoneSuffix" data-od-id="zone-suffix">.example.com</span>
+      </div>
+      <span class="field-hint hidden" id="subHint" data-od-id="sub-hint">子域名只能包含字母、数字与连字符。</span>
+    </div>
+
+    <div class="field" data-od-id="uuid-field">
+      <label class="field-label" for="uuidInput">节点 UUID</label>
+      <div class="uuid-group">
+        <input id="uuidInput" data-od-id="uuid-input" type="text" autocomplete="off" spellcheck="false" placeholder="自动生成中…">
+        <button type="button" class="btn btn-secondary" id="genUuidBtn" data-od-id="gen-uuid-btn">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M11.8 7A4.8 4.8 0 1 1 7 2.2c1.9 0 3.4.9 4.2 2.3M11.5 2v2.5H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          重新生成
+        </button>
+      </div>
+      <span class="field-hint hidden" id="uuidHint" data-od-id="uuid-hint">UUID 格式不正确，应为 36 位（含连字符）。</span>
+    </div>
+
+    <p class="host-preview" data-od-id="host-preview">节点地址：<code id="hostPreview">cf-proxy.example.com</code></p>
+
+    <div class="actions" data-od-id="config-actions">
+      <button class="btn btn-secondary" id="back2" data-od-id="config-back">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        返回
+      </button>
+      <button class="btn btn-primary" id="toDeploy" data-od-id="to-deploy-btn">下一步</button>
+    </div>
+  </section>
+
+  <!-- ═══════════ S3 部署 · 进行中 ═══════════ -->
+  <section class="screen hidden" id="screen3" data-od-id="screen-deploy">
+    <p class="eyebrow" data-od-id="deploy-eyebrow">第 3 步 · 部署</p>
+    <h1 data-od-id="deploy-heading">部署到 Cloudflare Pages</h1>
+    <p class="lead" data-od-id="deploy-lead">将 Worker 代码、KV 存储与自定义域一次性配置完成。全过程实时可见。</p>
+
+    <p class="context-bar" data-od-id="deploy-context">
+      <span class="cb-label">部署目标</span>
+      <code id="ctxHost" data-od-id="ctx-host">—</code>
+      <span class="cb-sep" aria-hidden="true">·</span>
+      <span class="cb-label">UUID</span>
+      <code id="ctxUuid" data-od-id="ctx-uuid">—</code>
+    </p>
+
+    <div class="panel" data-od-id="stage-panel">
+      <div class="panel-head">
+        <h2>部署阶段</h2>
+        <span class="summary" id="stageProgress" data-od-id="stage-progress">等待开始</span>
+      </div>
+      <div class="stage-bar" aria-hidden="true"><div class="stage-bar-fill" id="stageBarFill"></div></div>
+      <ol class="stage-list" id="stageList" data-od-id="stage-list"></ol>
+    </div>
+
+    <div class="console" data-od-id="console">
+      <button type="button" class="console-toggle" id="consoleToggle" data-od-id="console-toggle" aria-expanded="true" aria-controls="consoleWrap">
+        <svg class="chev" width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M4.5 2.5L8 6.5l-3.5 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        原始日志
+      </button>
+      <div class="console-wrap" id="consoleWrap">
+        <div class="console-log" id="deployLog" data-od-id="deploy-log" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <div class="error-banner hidden" id="deployError" data-od-id="deploy-error" role="alert">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"></circle><path d="M8 5v3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><circle cx="8" cy="11" r="0.9" fill="currentColor"></circle></svg>
+      <span id="deployErrorText"></span>
+    </div>
+
+    <div class="actions" data-od-id="deploy-actions">
+      <button class="btn btn-secondary" id="back3" data-od-id="deploy-back">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        返回
+      </button>
+      <button class="btn btn-primary" id="deployBtn" data-od-id="deploy-btn">开始部署</button>
+      <button class="btn btn-primary hidden" id="toOptimize" data-od-id="to-optimize-btn">下一步：优选 IP</button>
+    </div>
+  </section>
+
+  <!-- ═══════════ S4 优选 IP · 节点优选 ═══════════ -->
+  <section class="screen hidden" id="screen4" data-od-id="screen-optimize">
+    <p class="eyebrow" data-od-id="opt-eyebrow">第 4 步 · 优选 IP</p>
+    <h1 data-od-id="opt-heading">测速并写入优选 IP</h1>
+    <p class="lead" data-od-id="opt-lead">对 Cloudflare 边缘候选 IP 逐一测速，把延迟最低的前 30 名写入节点配置。</p>
+
+    <div class="panel hidden" id="optProgressCard" data-od-id="opt-progress-card">
+      <div class="panel-head">
+        <h2>测速进度</h2>
+        <span class="summary mono" id="optProgressText" data-od-id="opt-progress-text">准备中…</span>
+      </div>
+      <div class="opt-bar" aria-hidden="true"><div class="opt-bar-fill" id="optBarFill"></div></div>
+      <p class="opt-stage" id="optStage" data-od-id="opt-stage">正在建立候选清单…</p>
+    </div>
+
+    <div class="panel hidden" id="ipCard" data-od-id="ip-card">
+      <div class="panel-head">
+        <h2>优选结果 · 前 30 名</h2>
+        <span class="summary" id="ipNote" data-od-id="ip-note"></span>
+      </div>
+      <div class="ip-list" id="ipList" data-od-id="ip-list"></div>
+      <p class="legend" data-od-id="ip-legend">延迟分级：<span class="lg lg-fast"></span>≤ 150ms　<span class="lg lg-mid"></span>≤ 300ms　<span class="lg lg-slow"></span>&gt; 300ms</p>
+    </div>
+
+    <div class="error-banner hidden" id="optError" data-od-id="opt-error" role="alert">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"></circle><path d="M8 5v3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><circle cx="8" cy="11" r="0.9" fill="currentColor"></circle></svg>
+      <span id="optErrorText"></span>
+    </div>
+
+    <div class="actions" data-od-id="opt-actions">
+      <button class="btn btn-secondary" id="back4" data-od-id="opt-back">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9 2.5L4.5 7 9 11.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        返回
+      </button>
+      <button class="btn btn-primary" id="optimizeBtn" data-od-id="optimize-btn">开始测速</button>
+      <button class="btn btn-primary hidden" id="toDone" data-od-id="to-done-btn">下一步</button>
+    </div>
+  </section>
+
+  <!-- ═══════════ S5 完成 · 部署成功 ═══════════ -->
+  <section class="screen hidden" id="screen5" data-od-id="screen-done">
+    <div class="check-roundel" data-od-id="done-check">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </div>
+    <p class="eyebrow" data-od-id="done-eyebrow">第 5 步 · 完成</p>
+    <h1 data-od-id="done-heading">Edgetunnel已完成部署</h1>
+    <p class="lead" data-od-id="done-lead">节点 <code class="inline-code" id="doneHost">—</code> 已在 Cloudflare 边缘上线。把订阅地址导入客户端即可使用。</p>
+
+    <div class="panel" data-od-id="urls-panel">
+      <div class="panel-head"><h2>接入信息</h2></div>
+      <div class="copy-row" data-od-id="sub-row">
+        <div class="cr-main">
+          <span class="cr-label">订阅地址</span>
+          <code class="cr-value" id="subUrl">…</code>
         </div>
-      </label>
-      <label class="field">
-        <span class="label">UUID</span>
-        <div class="inline">
-          <input id="uuid" type="text" spellcheck="false" />
-          <button class="btn ghost" id="genUuidBtn" title="重新生成">🎲</button>
+        <button class="btn btn-secondary btn-copy" data-copy="subUrl" data-od-id="copy-sub">复制</button>
+      </div>
+      <div class="copy-row" data-od-id="admin-row">
+        <div class="cr-main">
+          <span class="cr-label">管理面板</span>
+          <code class="cr-value" id="adminUrl">…</code>
         </div>
-      </label>
-      <div class="actions">
-        <button class="btn ghost" id="back2">返回</button>
-        <button class="btn primary" id="toDeployBtn">下一步</button>
+        <button class="btn btn-secondary btn-copy" data-copy="adminUrl" data-od-id="copy-admin">复制</button>
       </div>
-    </section>
-
-    <!-- Step 3: 部署 -->
-    <section class="step hidden" id="step3">
-      <p class="hint">点击开始部署：拉取 worker → 建 KV → Pages 项目 → 绑定域名 → 签证书。</p>
-      <button class="btn primary big" id="deployBtn">开始部署</button>
-      <div class="log hidden" id="deployLog"></div>
-      <div class="actions hidden" id="deployActions">
-        <button class="btn ghost" id="back3">返回</button>
-        <button class="btn primary" id="toOptimizeBtn">下一步：优选 IP</button>
-      </div>
-    </section>
-
-    <!-- Step 4: 优选 IP -->
-    <section class="step hidden" id="step4">
-      <p class="hint">实测 ~700 个 CF Anycast IP 的 TCP 延迟，自动写入最快的 30 个并启用。</p>
-      <button class="btn primary big" id="optimizeBtn">开始测速</button>
-      <div class="progress-bar hidden" id="optProgress">
-        <div class="bar"><span id="optBarFill"></span></div>
-        <p class="progress-text" id="optProgressText">准备中…</p>
-      </div>
-      <div class="ip-list hidden" id="ipList"></div>
-      <div class="actions hidden" id="optActions">
-        <button class="btn ghost" id="back4">返回</button>
-        <button class="btn primary" id="toDoneBtn">下一步</button>
-      </div>
-    </section>
-
-    <!-- Step 5: 完成 -->
-    <section class="step hidden" id="step5">
-      <div class="card">
-        <div class="card-head">
-          <span>订阅链接</span>
-          <button class="btn ghost small" data-copy="subscription">复制</button>
+      <div class="copy-row" data-od-id="pwd-row">
+        <div class="cr-main">
+          <span class="cr-label">访问密码（UUID）</span>
+          <code class="cr-value" id="pwdValue">…</code>
         </div>
-        <code class="copy-target" id="subscription"></code>
+        <button class="btn btn-secondary btn-copy" data-copy="pwdValue" data-od-id="copy-pwd">复制</button>
       </div>
-      <div class="card">
-        <div class="card-head">
-          <span>后台地址</span>
-          <button class="btn ghost small" data-copy="admin">复制</button>
-        </div>
-        <code class="copy-target" id="admin"></code>
-        <p class="hint">管理员密码 = UUID</p>
-      </div>
-      <div class="card">
-        <div class="card-head"><span>接入 FlClash / Clash Verge</span></div>
-        <ol class="hint-list">
-          <li>新建订阅 → 类型选 URL</li>
-          <li>粘贴上方订阅链接 → 更新</li>
-          <li>选一个节点 → 开启系统代理</li>
-        </ol>
-      </div>
-      <div class="actions">
-        <button class="btn ghost" id="restartBtn">重新配置</button>
-      </div>
-    </section>
+    </div>
 
-    <!-- Toast -->
-    <div class="toast" id="toast"></div>
-  </main>
-  <script type="module" src="app.js"></script>
-</body>
-</html>
+    <div class="panel" data-od-id="status-panel">
+      <div class="panel-head">
+        <h2>节点状态</h2>
+        <button class="btn btn-secondary btn-sm" id="statusBtn" data-od-id="status-btn">检测节点状态</button>
+      </div>
+      <p class="status-hint" id="statusHint" data-od-id="status-hint">尚未检测。将查询 Pages 项目、自定义域与存活节点数。</p>
+      <div class="summary-list hidden" id="statusRows" data-od-id="status-rows">
+        <div class="summary-row"><span class="k">Pages 项目</span><span class="v" id="stProject">—</span></div>
+        <div class="summary-row"><span class="k">默认域</span><span class="v" id="stSubdomain">—</span></div>
+        <div class="summary-row"><span class="k">自定义域</span><span class="v" id="stDomains">—</span></div>
+        <div class="summary-row"><span class="k">存活节点</span><span class="v" id="stNodes">—</span></div>
+      </div>
+    </div>
+
+    <div class="actions" data-od-id="done-actions">
+      <button class="btn btn-secondary" id="restartBtn" data-od-id="restart-btn">重新配置</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast" data-od-id="toast" role="status"></div>
+
+<script src="app.js"></script>
+
+
+</body></html>
