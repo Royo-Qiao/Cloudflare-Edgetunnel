@@ -51,15 +51,39 @@ npm start
     ▼
 本地 Express 服务 ──► Cloudflare REST API（ zones / pages / kv / dns ）
                      │
-                     └─► wrangler pages deploy（上传 _worker.js）
-                              │
-                              ▼
-                   edgetunnel 上游 raw _worker.js（部署时拉取）
+                     ├─► wrangler pages deploy（上传 _worker.js）
+                     │        │
+                     │        ▼
+                     │  edgetunnel 上游 raw _worker.js（部署时拉取）
+                     │
+                     └─► wrangler pages deploy（admin-ui/ → edt-admin-ui 项目）
 ```
 
 - `_worker.js` **不入库**，部署时从 edgetunnel 上游拉取（带 CN 镜像 fallback）
 - 部署用 **Cloudflare Pages**（edgetunnel README 标注的最佳推荐方式，比 Workers 部署稳）
 - 优选 IP 用 `net.createConnection` TCP 实测延迟，写入 KV 的 `ADD.txt`，并设置 `config.json` 的 `随机IP=false`
+- 管理后台 UI 自托管：见下节
+
+## 管理后台 UI（admin-ui/）
+
+edgetunnel 的后台页面**不在** `_worker.js` 里——Worker 运行时从上游静态站 `edt-pages.github.io`
+拉取 `/login`、`/admin` 等页面转发给浏览器。本工具把这个静态站 fork 到了仓库的
+[`admin-ui/`](admin-ui/) 目录（源自 [edt-pages/EDT-Pages.github.io](https://github.com/edt-pages/EDT-Pages.github.io)），
+部署时会：
+
+1. 把 `admin-ui/` 发布为你的 **`edt-admin-ui` Pages 项目**（仅用 pages.dev 默认域，不占用你的域名）
+2. 拉取 `_worker.js` 后自动把其中的上游 UI 地址替换为你的 `edt-admin-ui` 地址
+
+**想改后台界面**：直接编辑 `admin-ui/` 里的文件，重新部署即生效：
+
+| 文件 | 页面 |
+|---|---|
+| `admin-ui/admin/index.html` | 管理后台主体（单文件应用，样式在内联 `<style>`） |
+| `admin-ui/login/index.html` | 登录页 |
+| `admin-ui/noADMIN/index.html`、`admin-ui/noKV/index.html` | 错误提示页 |
+
+后台的数据接口（`/admin/config.json` 等）全部由 Worker 在节点域名下处理，与静态站无关，
+所以只改 HTML/CSS/JS 不会影响功能。
 
 ## 命令行备选
 
