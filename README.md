@@ -1,16 +1,30 @@
 # Cloudflare-Edgetunnel
 
-基于 [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) 的**一键部署 + 优选 IP** 工具，本地 Web 界面配置，不用手敲命令。
+给 [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) 包了一层本地 Web 界面，填个表就能把 VLESS+WS+TLS 节点部署到 Cloudflare Pages 上——永久免费、绑自己的域名，还会自动帮你测速挑出最快的 CF IP。
 
-通过 Cloudflare Pages 部署 VLESS+WS+TLS+CDN 节点，永久免费，绑定自有域名，自动测速优选 CF IP 提速，生成的订阅直接导入 FlClash / Clash Verge / sing-box 等客户端。
+## 能做什么
 
-## 特性
+- 网页填表，5 步走完部署（认证 → 配置域名/UUID → 部署 → 优选 IP → 拿订阅链接），不用记命令
+- 自动建 KV、建 Pages 项目、绑域名、签证书
+- 对 ~700 个 Cloudflare IP 做 TCP 测速，把最快的 30 个写进订阅，减少握手延迟
+- 部署完直接给订阅链接，Clash导入后可直接用
 
-- 🖥️ **Web 界面**：5 步向导，填表即部署，极简交互
-- 🚀 **一键部署**：自动建 KV、Pages 项目、绑自定义域、签证书
-- ⚡ **优选 IP**：本机 TCP 实测 ~700 个 CF IP，自动写入最快的 30 个
-- 🔑 **安全**：API Token 仅存内存，不落盘、不打日志
-- 📋 **开箱即用**：生成订阅链接 + 后台地址 + 客户端导入指引
+## 前置准备
+
+- Node.js ≥ 18
+- 一个已经托管在 Cloudflare、状态是 Active 的域名，参考：[Cloudflare 添加站点教程](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/) 流程很简单：  
+
+  买一个域名 → 登录 Cloudflare 添加站点 → 选 Free 套餐 → 把域名注册商那边的 Nameserver 改成 Cloudflare 给你的两条 NS 记录，等几分钟状态变成 Active 就行
+
+- 在 [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) 建一个 API Token，需要这些权限：
+  - Zone → Zone → Read
+  - Zone → DNS → Edit
+  - Account → Workers Scripts → Edit
+  - Account → Workers KV Storage → Edit
+  - Account → Cloudflare Pages → Edit
+  - Zone Resources 限定成你自己的域名
+
+  嫌麻烦可以直接套官方 "Edit Cloudflare Workers" 模板，再加上 DNS Edit 和 Pages Edit 两条权限。
 
 ## 快速开始
 
@@ -21,27 +35,19 @@ npm install
 npm start
 ```
 
-浏览器打开 `http://localhost:3000`，按界面走 5 步：
+打开 `http://localhost:3000`，跟着页面走：认证 → 配置 → 部署 → 优选 IP → 完成。
 
-1. **认证** — 粘贴 Cloudflare API Token
-2. **配置** — 选域名 + 子域 + UUID（全预填，可直接下一步）
-3. **部署** — 点按钮，实时进度日志
-4. **优选 IP** — 点按钮，测速并写入最快 IP
-5. **完成** — 复制订阅链接，导入客户端
+不想用界面，命令行也能直接部署：
 
-## 前置条件
+```bash
+CF_API_TOKEN=xxxxx node scripts/deploy-cli.mjs --zone yourdomain.com --subdomain cf-proxy
+```
 
-- **Node.js ≥ 18**
-- **Cloudflare 账号** + 一个**已托管在 CF 的域名**（zone 状态 Active）
-- **API Token**：在 [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) 创建，需要以下权限：
-  - `Zone` - `Zone` - `Read`
-  - `Zone` - `DNS` - `Edit`
-  - `Account` - `Workers Scripts` - `Edit`
-  - `Account` - `Workers KV Storage` - `Edit`
-  - `Account` - `Cloudflare Pages` - `Edit`
-  - Zone Resources 限定你的域名
-
-  或直接用 **"Edit Cloudflare Workers"** 模板 + 追加 DNS Edit + Pages Edit。
+参数：
+- `--zone` 域名，必填
+- `--subdomain` 子域，默认 `cf-proxy`
+- `--uuid` 自定义 UUID，不填就随机生成
+- `--optimize` 部署完顺便测速优选
 
 ## 工作原理
 
@@ -59,74 +65,13 @@ npm start
                      └─► wrangler pages deploy（admin-ui/ → edt-admin-ui 项目）
 ```
 
-- `_worker.js` **不入库**，部署时从 edgetunnel 上游拉取（带 CN 镜像 fallback）
-- 部署用 **Cloudflare Pages**（edgetunnel README 标注的最佳推荐方式，比 Workers 部署稳）
-- 优选 IP 用 `net.createConnection` TCP 实测延迟，写入 KV 的 `ADD.txt`，并设置 `config.json` 的 `随机IP=false`
-- 管理后台 UI 自托管：见下节
+几个关键点：
 
-## 管理后台 UI（admin-ui/）
+- `_worker.js` 不放进仓库，每次部署都从 edgetunnel 上游拉最新版（国内访问不了自动切镜像）
+- 优选 IP 靠 `net.createConnection` 实测 TCP 延迟，结果写进 KV 的 `ADD.txt`，同时把 `config.json` 的「随机IP」关掉
 
-edgetunnel 的后台页面**不在** `_worker.js` 里——Worker 运行时从上游静态站 `edt-pages.github.io`
-拉取 `/login`、`/admin` 等页面转发给浏览器。本工具把这个静态站 fork 到了仓库的
-[`admin-ui/`](admin-ui/) 目录（源自 [edt-pages/EDT-Pages.github.io](https://github.com/edt-pages/EDT-Pages.github.io)），
-部署时会：
+## 进阶
 
-1. 把 `admin-ui/` 发布为你的 **`edt-admin-ui` Pages 项目**（仅用 pages.dev 默认域，不占用你的域名）
-2. 拉取 `_worker.js` 后自动把其中的上游 UI 地址替换为你的 `edt-admin-ui` 地址
+部署完成后会提供后台地址：`https://<子域>.<域名>/<UUID>`，管理员密码就是 UUID
 
-**想改后台界面**：直接编辑 `admin-ui/` 里的文件，重新部署即生效：
-
-| 文件 | 页面 |
-|---|---|
-| `admin-ui/admin/index.html` | 管理后台主体（单文件应用，样式在内联 `<style>`） |
-| `admin-ui/login/index.html` | 登录页 |
-| `admin-ui/noADMIN/index.html`、`admin-ui/noKV/index.html` | 错误提示页 |
-
-后台的数据接口（`/admin/config.json` 等）全部由 Worker 在节点域名下处理，与静态站无关，
-所以只改 HTML/CSS/JS 不会影响功能。
-
-## 命令行备选
-
-不用 UI 也可直接命令行部署：
-
-```bash
-CF_API_TOKEN=xxxxx node scripts/deploy-cli.mjs --zone royoyourdomain.com --subdomain cf-proxy
-```
-
-参数：
-- `--zone` 域名（必填）
-- `--subdomain` 子域（默认 `cf-proxy`）
-- `--uuid` 自定义 UUID（默认随机生成）
-- `--optimize` 部署后顺带测速优选
-
-## 订阅与客户端
-
-部署完成后，界面会给到：
-
-- **订阅链接**：`https://<子域>.<域名>/sub?token=<...>`
-- **后台地址**：`https://<子域>.<域名>/<UUID>`（管理员密码 = UUID）
-- **FlClash / Clash Verge**：新建订阅 → URL → 粘贴订阅链接
-- **sing-box**：用 `/sub?token=...&singbox=1` 获取 sing-box 格式
-
-## FAQ
-
-**Q: 为什么用 Pages 而不是 Workers？**
-A: edgetunnel 的 `_worker.js` 在 Workers 部署下线上会异常（回源到 nginx 伪装页），Pages 部署正常。这是上游 README 标注的「最佳推荐」方式。
-
-**Q: 优选 IP 真的有效吗？**
-A: 是。默认节点用 CF 随机 IP，本机到这些 IP 的延迟不定。工具实测 700+ 个 CF Anycast IP 的 TCP 延迟，取最快的 30 个写入订阅，能明显降低握手延迟。
-
-**Q: 会被 Cloudflare 封号吗？**
-A: 自建代理属 ToS 灰区，正常个人使用极少触发。免费版 100k 请求/天 + 10ms CPU/请求，WebSocket 长连接不计请求数，日常够用。
-
-**Q: Token 安全吗？**
-A: Token 仅存在本地服务的内存里，不写文件、不打日志、不发往任何第三方。关闭服务即清除。
-
-## 致谢
-
-- [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) — 核心隧道方案
-- [Cloudflare](https://www.cloudflare.com/) — 免费边缘计算与 CDN
-
-## License
-
-MIT。edgetunnel 源码版权归上游原作者，本仓库仅提供部署工具。
+想了解节点实现细节、自定义 Worker 逻辑，可以研究一下上游项目 [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel)。
