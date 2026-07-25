@@ -62,6 +62,30 @@ app.post('/api/verify-token', wrap(async (req, res) => {
 /** 生成 UUID */
 app.post('/api/uuid', (req, res) => res.json({ success: true, uuid: genUUID() }));
 
+/**
+ * 返回当前已部署 Pages 项目的 UUID（向导预填用）。
+ * 重新部署时沿用该 UUID，避免擅自生成新 UUID 导致在用订阅/节点全部失效。
+ * 项目不存在（首次部署）返回 uuid=null。
+ */
+app.post('/api/deployed-uuid', wrap(async (req, res) => {
+  const { token, accountId, projectName = 'edt-pages' } = req.body || {};
+  if (!token || !accountId) throw new Error('缺少 token 或 accountId');
+  let proj = null, uncertain = false;
+  try {
+    // 8s 超时：api.cloudflare.com 在国内会抖动，避免接口一直挂起
+    proj = await Promise.race([
+      getPagesProject(token, accountId, projectName),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('查询超时')), 8000)),
+    ]);
+  } catch (e) {
+    // e.status===404 = 项目确实不存在（首次部署，确定无 UUID）；
+    // 其余（网络错误/超时，无 status）= 查不了，标记 uncertain，前端不可盲目生成新 UUID
+    uncertain = e.status !== 404;
+  }
+  const uuid = proj?.deployment_configs?.production?.env_vars?.UUID?.value || null;
+  res.json({ success: true, uuid, uncertain });
+}));
+
 /** 算订阅 token + 返回订阅/后台 URL */
 app.post('/api/subscription', wrap(async (req, res) => {
   const { host, uuid } = req.body || {};

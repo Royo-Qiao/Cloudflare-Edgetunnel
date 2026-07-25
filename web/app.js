@@ -167,6 +167,11 @@ async function mockUuid() {
   return { success: true, uuid };
 }
 
+async function mockDeployedUuid() {
+  await sleep(150);
+  return { success: true, uuid: null }; // mock 无已部署项目，回退到生成新 UUID
+}
+
 /** 简单非加密哈希 → 32 hex，仅为 mock 订阅链接形似（真实环境由服务端 MD5MD5 计算）。 */
 function mockHex32(str) {
   let out = '';
@@ -456,7 +461,7 @@ function setupStep2() {
   updateZone();
   subInput.value = STATE.subdomain || 'cf-proxy';
   if (STATE.uuid) uuidInput.value = STATE.uuid;
-  else genUUID(); // 契约 #5：UUID 预填
+  else prefillUuid(); // 契约 #5：UUID 预填（优先沿用已部署 UUID）
   updateHostPreview();
 }
 
@@ -499,6 +504,26 @@ async function genUUID() {
   }
 }
 $('genUuidBtn').addEventListener('click', genUUID);
+
+/**
+ * UUID 预填：优先沿用已部署的 UUID，避免重新部署时擅自生成新 UUID
+ * 顶掉在用订阅/节点。用户已手动填值则不覆盖；无已部署项目时回退生成新 UUID。
+ */
+async function prefillUuid() {
+  const d = await apiPost('/api/deployed-uuid', { token: STATE.token, accountId: STATE.accountId }, mockDeployedUuid);
+  if (d && d.success && d.uuid) {
+    if (uuidInput.value.trim()) return; // 用户已填，尊重输入
+    STATE.uuid = d.uuid;
+    uuidInput.value = d.uuid;
+    clearFieldError(uuidInput, 'uuidHint');
+  } else if (d && d.success && d.uncertain) {
+    // 查不了（网络异常）：仍可生成新 UUID 不阻塞，但明确警告可能覆盖在用订阅
+    toast('未能确认是否已有部署（网络异常），已生成新 UUID；若此前部署过，请检查网络后重进此步，避免覆盖在用订阅');
+    genUUID();
+  } else {
+    genUUID(); // 确认首次部署
+  }
+}
 
 function setFieldError(input, hintId, msg) {
   input.classList.add('invalid');
