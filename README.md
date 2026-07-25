@@ -1,4 +1,4 @@
-# cloudflare-edge_tunnel
+# Cloudflare-Edgetunnel
 
 基于 [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) 的**一键部署 + 优选 IP** 工具，本地 Web 界面配置，不用手敲命令。
 
@@ -15,8 +15,8 @@
 ## 快速开始
 
 ```bash
-git clone <本仓库地址> cloudflare-edge_tunnel
-cd cloudflare-edge_tunnel
+git clone https://github.com/Royo-Qiao/Cloudflare-Edgetunnel.git
+cd Cloudflare-Edgetunnel
 npm install
 npm start
 ```

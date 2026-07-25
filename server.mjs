@@ -174,6 +174,6 @@ app.post('/api/status', wrap(async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`\n  ▸ cloudflare-edge_tunnel 配置工具已启动`);
+  console.log(`\n  ▸ Cloudflare-Edgetunnel 配置工具已启动`);
   console.log(`  ▸ 浏览器打开：http://localhost:${PORT}\n`);
 });
