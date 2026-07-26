@@ -226,7 +226,7 @@ async function* mockDeployEvents(body) {
     step: 'result', status: 'ok', message: '部署完成',
     result: {
       accountId,
-      projectName: 'edt-pages',
+      projectName: `edt-pages-${body.subdomain}`,
       kvId: 'demo-kv-namespace-id',
       hostname,
       pagesUrl: `https://${hostname}`,
@@ -487,7 +487,14 @@ subInput.addEventListener('input', () => {
 });
 uuidInput.addEventListener('input', () => {
   STATE.uuid = uuidInput.value.trim();
+  uuidInput.dataset.touched = '1'; // 用户手动改过
   clearFieldError(uuidInput, 'uuidHint');
+});
+
+// 子域变更失焦时，如果用户没手动改过 UUID，自动重新预填对应该子域的已部署 UUID
+subInput.addEventListener('blur', () => {
+  if (uuidInput.dataset.touched === '1') return;
+  prefillUuid(true);
 });
 
 async function genUUID() {
@@ -506,21 +513,27 @@ async function genUUID() {
 $('genUuidBtn').addEventListener('click', genUUID);
 
 /**
- * UUID 预填：优先沿用已部署的 UUID，避免重新部署时擅自生成新 UUID
- * 顶掉在用订阅/节点。用户已手动填值则不覆盖；无已部署项目时回退生成新 UUID。
+ * UUID 预填：优先沿用当前子域对应 Pages 项目的 UUID，避免重新部署时
+ * 擅自生成新 UUID 顶掉在用订阅/节点。每个子域对应一个独立 Pages 项目
+ * （edt-pages-<子域名>），互不干扰。用户已手动填值则不覆盖。
+ * @param {boolean} [force=false]  true=即使用户填了也刷新（子域变更时用，但需先确认用户没改过）
  */
-async function prefillUuid() {
-  const d = await apiPost('/api/deployed-uuid', { token: STATE.token, accountId: STATE.accountId }, mockDeployedUuid);
+async function prefillUuid(force = false) {
+  const subdomain = STATE.subdomain || 'cf-proxy';
+  const projectName = `edt-pages-${subdomain}`;
+  const d = await apiPost('/api/deployed-uuid', { token: STATE.token, accountId: STATE.accountId, projectName }, mockDeployedUuid);
+  const userTouched = uuidInput.dataset.touched === '1';
   if (d && d.success && d.uuid) {
-    if (uuidInput.value.trim()) return; // 用户已填，尊重输入
+    if (!force && uuidInput.value.trim() && userTouched) return; // 用户已手动改过，尊重输入
     STATE.uuid = d.uuid;
     uuidInput.value = d.uuid;
     clearFieldError(uuidInput, 'uuidHint');
+    toast(`已沿用 ${projectName} 的 UUID（${d.uuid.slice(0, 8)}…）`);
   } else if (d && d.success && d.uncertain) {
-    // 查不了（网络异常）：仍可生成新 UUID 不阻塞，但明确警告可能覆盖在用订阅
     toast('未能确认是否已有部署（网络异常），已生成新 UUID；若此前部署过，请检查网络后重进此步，避免覆盖在用订阅');
     genUUID();
   } else {
+    if (!force && userTouched && uuidInput.value.trim()) return;
     genUUID(); // 确认首次部署
   }
 }
@@ -851,7 +864,7 @@ $('statusBtn').addEventListener('click', async () => {
     {
       token: STATE.token,
       accountId: STATE.deploy.accountId,
-      projectName: STATE.deploy.projectName || 'edt-pages',
+      projectName: STATE.deploy.projectName || `edt-pages-${STATE.subdomain || 'cf-proxy'}`,
       host: STATE.deploy.hostname,
       uuid: STATE.uuid,
     },

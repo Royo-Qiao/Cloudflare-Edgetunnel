@@ -68,8 +68,9 @@ app.post('/api/uuid', (req, res) => res.json({ success: true, uuid: genUUID() })
  * 项目不存在（首次部署）返回 uuid=null。
  */
 app.post('/api/deployed-uuid', wrap(async (req, res) => {
-  const { token, accountId, projectName = 'edt-pages' } = req.body || {};
+  const { token, accountId, projectName } = req.body || {};
   if (!token || !accountId) throw new Error('缺少 token 或 accountId');
+  if (!projectName) { res.json({ success: true, uuid: null, uncertain: false }); return; }
   let proj = null, uncertain = false;
   try {
     // 8s 超时：api.cloudflare.com 在国内会抖动，避免接口一直挂起
@@ -170,17 +171,19 @@ app.post('/api/optimize-ips', (req, res) => {
 
 /** 查状态：Pages 项目、自定义域、节点数。按前端契约显式塑形。 */
 app.post('/api/status', wrap(async (req, res) => {
-  const { token, accountId, projectName = 'edt-pages', host, uuid } = req.body || {};
+  const { token, accountId, projectName, host, uuid } = req.body || {};
   const out = { project: null, domains: [] };
 
-  try {
-    const proj = await getPagesProject(token, accountId, projectName);
-    if (proj) out.project = { name: proj.name, subdomain: proj.subdomain || '' };
-  } catch { /* 项目不存在或无权限 */ }
-  try {
-    const domains = await listPagesDomains(token, accountId, projectName);
-    out.domains = (domains || []).map((d) => ({ name: d.name, status: d.status }));
-  } catch { /* 忽略 */ }
+  if (projectName) {
+    try {
+      const proj = await getPagesProject(token, accountId, projectName);
+      if (proj) out.project = { name: proj.name, subdomain: proj.subdomain || '' };
+    } catch { /* 项目不存在或无权限 */ }
+    try {
+      const domains = await listPagesDomains(token, accountId, projectName);
+      out.domains = (domains || []).map((d) => ({ name: d.name, status: d.status }));
+    } catch { /* 忽略 */ }
+  }
 
   if (host && uuid) {
     try {

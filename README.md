@@ -69,6 +69,26 @@ CF_API_TOKEN=xxxxx node scripts/deploy-cli.mjs --zone yourdomain.com --subdomain
 
 - `_worker.js` 不放进仓库，每次部署都从 edgetunnel 上游拉最新版（国内访问不了自动切镜像）
 - 优选 IP 靠 `net.createConnection` 实测 TCP 延迟，结果写进 KV 的 `ADD.txt`，同时把 `config.json` 的「随机IP」关掉
+- **每个子域一套独立资源**：Pages 项目 `edt-pages-<子域名>` + KV 命名空间 `edt-kv-<子域名>`，换子域部署互不干扰
+
+
+## 常见踩坑
+
+**⚠️ 换子域部署会顶掉旧订阅吗？不会。**
+
+每个子域对应一个独立的 Pages 项目（命名规则：`edt-pages-<子域名>`）和独立的 KV 命名空间（`edt-kv-<子域名>`），UUID、节点配置、优选 IP 完全隔离，互不干扰。
+
+- 同一个子域重新部署：向导第 2 步会自动读取该子域对应项目的 UUID 并预填沿用，**不会擅自生成新 UUID**
+- 网络不通时读不到已部署 UUID，工具会生成新 UUID 并弹警告——**这种情况下别直接部署**，检查网络后重进该步，否则可能顶掉在用订阅
+- 不同子域之间完全独立，换个新子域部署就是一套全新的节点
+
+
+**⚠️ 部署时 fetch failed - 网络问题**
+
+部署过程中如遇报错 `fetch failed` / `UND_ERR_CONNECT_TIMEOUT`，请检查本地是否能连上 `api.cloudflare.com`。
+
+工具已内置「直连失败自动走本地代理」兜底（读 `HTTP_PROXY` 等环境变量），如果开着代理会自动切换。wrangler 部署会**直连/代理交替重试多次**（间隔 2.5s
+
 
 ## 进阶
 
