@@ -142,6 +142,7 @@ app.post('/api/optimize-ips', (req, res) => {
     send({ type: 'start', total: ips.length });
     const ranked = await testBatch(ips, {
       concurrency: 50,
+      sni: host,
       onProgress: (done, total) => {
         if (done % 20 === 0 || done === total) send({ type: 'progress', done, total });
       },

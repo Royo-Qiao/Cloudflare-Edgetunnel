@@ -51,7 +51,7 @@ try {
     const kvs = await listKV(token, result.accountId);
     const kv = kvs.find((k) => k.id === result.kvId);
     if (!kv) throw new Error('KV 不存在');
-    const ranked = await testBatch(buildCandidates(16), { concurrency: 50 });
+    const ranked = await testBatch(buildCandidates(16), { concurrency: 50, sni: result.hostname });
     await putADD(token, result.accountId, result.kvId, toADDContent(ranked, 30));
     const config = await getConfig(token, result.accountId, result.kvId);
     if (config) { disableRandomIP(config); await putConfig(token, result.accountId, result.kvId, config); }
