@@ -235,7 +235,7 @@ async function* mockDeployEvents(body) {
 }
 
 async function* mockOptimizeEvents() {
-  const total = 321; // 与 lib/optimize-ips.mjs buildCandidates(16) 一致
+  const total = 320; // 与 lib/optimize-ips.mjs buildCandidates(16) 一致
   yield { type: 'start', total };
   for (let done = 20; done <= total; done += 20) {
     await sleep(110);
