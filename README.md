@@ -40,12 +40,12 @@ npm start
 不想用界面，命令行也能直接部署：
 
 ```bash
-CF_API_TOKEN=xxxxx node scripts/deploy-cli.mjs --zone yourdomain.com --subdomain cf-proxy
+CF_API_TOKEN=xxxxx node scripts/deploy-cli.mjs --zone yourdomain.com --subdomain cloudflare-edgetunnel
 ```
 
 参数：
 - `--zone` 域名，必填
-- `--subdomain` 子域，默认 `cf-proxy`
+- `--subdomain` 子域，默认 `cloudflare-edgetunnel`
 - `--uuid` 自定义 UUID，不填就随机生成
 - `--optimize` 部署完顺便测速优选
 

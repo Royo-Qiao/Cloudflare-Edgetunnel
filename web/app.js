@@ -19,7 +19,7 @@ const STATE = {
   accountId: '',
   zoneId: '',
   zoneName: '',
-  subdomain: 'cf-proxy',
+  subdomain: 'cloudflare-edgetunnel',
   uuid: '',
   deploy: null,
 };
@@ -459,7 +459,7 @@ function setupStep2() {
   if (STATE.zones.length === 1) zoneInput.value = STATE.zones[0].id;
   if (STATE.zoneId && STATE.zones.some((z) => z.id === STATE.zoneId)) zoneInput.value = STATE.zoneId;
   updateZone();
-  subInput.value = STATE.subdomain || 'cf-proxy';
+  subInput.value = STATE.subdomain || 'cloudflare-edgetunnel';
   if (STATE.uuid) uuidInput.value = STATE.uuid;
   else prefillUuid(); // 契约 #5：UUID 预填（优先沿用已部署 UUID）
   updateHostPreview();
@@ -475,13 +475,13 @@ function updateZone() {
 }
 
 function updateHostPreview() {
-  const host = (subInput.value.trim() || 'cf-proxy') + (STATE.zoneName ? '.' + STATE.zoneName : '');
+  const host = (subInput.value.trim() || 'cloudflare-edgetunnel') + (STATE.zoneName ? '.' + STATE.zoneName : '');
   $('hostPreview').textContent = host;
 }
 
 zoneInput.addEventListener('change', updateZone);
 subInput.addEventListener('input', () => {
-  STATE.subdomain = subInput.value.trim() || 'cf-proxy';
+  STATE.subdomain = subInput.value.trim() || 'cloudflare-edgetunnel';
   clearFieldError(subInput, 'subHint');
   updateHostPreview();
 });
@@ -519,7 +519,7 @@ $('genUuidBtn').addEventListener('click', genUUID);
  * @param {boolean} [force=false]  true=即使用户填了也刷新（子域变更时用，但需先确认用户没改过）
  */
 async function prefillUuid(force = false) {
-  const subdomain = STATE.subdomain || 'cf-proxy';
+  const subdomain = STATE.subdomain || 'cloudflare-edgetunnel';
   const projectName = `edt-pages-${subdomain}`;
   const d = await apiPost('/api/deployed-uuid', { token: STATE.token, accountId: STATE.accountId, projectName }, mockDeployedUuid);
   const userTouched = uuidInput.dataset.touched === '1';
@@ -552,7 +552,7 @@ function clearFieldError(input, hintId) {
 $('back2').addEventListener('click', () => goStep(1));
 $('toDeploy').addEventListener('click', () => {
   // 契约 #5：Next 时校验（内联提示，非 toast —— plan §3 S2 升级）
-  STATE.subdomain = subInput.value.trim() || 'cf-proxy';
+  STATE.subdomain = subInput.value.trim() || 'cloudflare-edgetunnel';
   STATE.uuid = uuidInput.value.trim();
   let firstBad = null;
   if (!/^[a-z0-9-]+$/i.test(STATE.subdomain)) {
@@ -864,7 +864,7 @@ $('statusBtn').addEventListener('click', async () => {
     {
       token: STATE.token,
       accountId: STATE.deploy.accountId,
-      projectName: STATE.deploy.projectName || `edt-pages-${STATE.subdomain || 'cf-proxy'}`,
+      projectName: STATE.deploy.projectName || `edt-pages-${STATE.subdomain || 'cloudflare-edgetunnel'}`,
       host: STATE.deploy.hostname,
       uuid: STATE.uuid,
     },
