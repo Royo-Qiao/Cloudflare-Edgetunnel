@@ -2,8 +2,9 @@
 
 给 [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) 包了一层本地 Web 界面，填个表就能把 VLESS+WS+TLS 节点部署到 Cloudflare Pages 上——永久免费、绑自己的域名，还会自动帮你测速挑出最快的 CF IP。
 
-<img width="560" height="346" alt="demo" src="https://github.com/user-attachments/assets/acdabbc8-50f2-40be-819c-07490ea5d725" />
-
+<p align="center">
+  <img src="https://github.com/Royo-Qiao/Cloudflare-Edgetunnel/releases/download/v1.0.0/demo.webp" width="800">
+</p>
 
 ## 能做什么
 
