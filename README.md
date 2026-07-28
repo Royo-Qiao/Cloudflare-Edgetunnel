@@ -1,9 +1,15 @@
 # Cloudflare-Edgetunnel
 
+<p align="center">
+  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue.svg">
+  <img alt="GitHub Stars" src="https://img.shields.io/github/stars/Royo-Qiao/Cloudflare-Edgetunnel?style=social">
+  <img alt="Deploys to Cloudflare Pages" src="https://img.shields.io/badge/deploys_to-Cloudflare_Pages-f6821c?logo=cloudflare&logoColor=white">
+</p>
+
 给 [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) 包了一层本地 Web 界面，填个表就能把 VLESS+WS+TLS 节点部署到 Cloudflare Pages 上——永久免费、绑自己的域名，还会自动帮你测速挑出最快的 CF IP。
 
 <p align="center">
-  <img src="https://github.com/Royo-Qiao/Cloudflare-Edgetunnel/releases/download/v1.0.0/demo.webp" width="800">
+  <img src="https://github.com/Royo-Qiao/Cloudflare-Edgetunnel/releases/download/v1.0.0/demo.webp" width="800" alt="Cloudflare-Edgetunnel Web 向导界面演示">
 </p>
 
 ## 能做什么
@@ -99,3 +105,23 @@ CF_API_TOKEN=xxxxx node scripts/deploy-cli.mjs --zone yourdomain.com --subdomain
 部署完成后会提供后台地址：`https://<子域>.<域名>/<UUID>`，管理员密码就是 UUID
 
 想了解节点实现细节、自定义 Worker 逻辑，可以研究一下上游项目 [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel)。
+
+## 贡献
+
+欢迎提 issue 讨论问题，或直接开 PR。本地开发：
+
+```bash
+npm install
+npm run dev   # 文件改动自动重启
+```
+
+提交前请看 [CONTRIBUTING.md](CONTRIBUTING.md)；参与即视为同意 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
+
+## 致谢上游
+
+edgetunnel 上游项目 (https://github.com/cmliu/edgetunnel) 版权归其原作者所有，
+本仓库仅提供部署与配置工具，不包含其源码。
+
+## 许可
+
+[MIT](LICENSE) © Cloudflare-Edgetunnel contributors
