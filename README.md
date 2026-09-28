@@ -2,7 +2,6 @@
 
 <p align="center">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue.svg">
-  <img alt="GitHub Stars" src="https://img.shields.io/github/stars/Royo-Qiao/Cloudflare-Edgetunnel?style=social">
   <img alt="Deploys to Cloudflare Pages" src="https://img.shields.io/badge/deploys_to-Cloudflare_Pages-f6821c?logo=cloudflare&logoColor=white">
 </p>
 
@@ -21,7 +20,7 @@
 
 ## 前置准备
 
-- Node.js ≥ 18
+- Node.js ≥ 22（lockfile 锁定的 wrangler 要求 Node ≥ 22）
 - 一个已经托管在 Cloudflare、状态是 Active 的域名，参考：[Cloudflare 添加站点教程](https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/) 流程很简单：  
 
   买一个域名 → 登录 Cloudflare 添加站点 → 选 Free 套餐 → 把域名注册商那边的 Nameserver 改成 Cloudflare 给你的两条 NS 记录，等几分钟状态变成 Active 就行
@@ -108,20 +107,19 @@ CF_API_TOKEN=xxxxx node scripts/deploy-cli.mjs --zone yourdomain.com --subdomain
 
 ## 贡献
 
-欢迎提 issue 讨论问题，或直接开 PR。本地开发：
-
-```bash
-npm install
-npm run dev   # 文件改动自动重启
-```
-
-提交前请看 [CONTRIBUTING.md](CONTRIBUTING.md)；参与即视为同意 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
+欢迎提 issue 讨论问题，或直接开 PR。环境要求与本地开发步骤见 [CONTRIBUTING.md](CONTRIBUTING.md)；提交 PR 前请先阅读该文档，参与即视为同意 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
 
 ## 致谢上游
 
-edgetunnel 上游项目 (https://github.com/cmliu/edgetunnel) 版权归其原作者所有，
-本仓库仅提供部署与配置工具，不包含其源码。
+本项目的节点实现完全依赖上游项目：
+
+- [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) —— 提供核心 `_worker.js`（每次部署实时拉取上游最新版）
+- [edt-pages/EDT-Pages.github.io](https://github.com/edt-pages/EDT-Pages.github.io) —— 本仓库 `admin-ui/` 管理界面在其基础上 fork 修改而来
+
+edgetunnel 上游项目版权归其原作者所有；`admin-ui/` 目录为 GPL-2.0 衍生代码，随上游继续以 GPL-2.0 授权。详见 [NOTICE.md](NOTICE.md)。
 
 ## 许可
 
-[MIT](LICENSE) © Cloudflare-Edgetunnel contributors
+本仓库自有代码（Web 向导、`lib/`、部署脚本等）以 [MIT](LICENSE) 授权，© Cloudflare-Edgetunnel contributors。
+
+`admin-ui/` 目录为 GPL-2.0 衍生代码，继续以上游的 [GNU GPL-2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) 授权，详见 [NOTICE.md](NOTICE.md)。
