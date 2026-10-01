@@ -3,7 +3,7 @@
  * 命令行部署入口（复用 lib/deploy.mjs + lib/optimize-ips.mjs）。
  *
  * 用法：
- *   CF_API_TOKEN=xxx node scripts/deploy-cli.mjs --zone royoyourdomain.com [--subdomain cloudflare-edgetunnel] [--uuid <uuid>] [--optimize]
+ *   CF_API_TOKEN=xxx node scripts/deploy-cli.mjs --zone=yourdomain.com [--subdomain=cloudflare-edgetunnel] [--uuid=<uuid>] [--optimize]
  */
 import { deploy } from '../lib/deploy.mjs';
 import { buildCandidates, testBatch, toADDContent } from '../lib/optimize-ips.mjs';
