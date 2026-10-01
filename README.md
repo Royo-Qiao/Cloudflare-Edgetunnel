@@ -1,11 +1,17 @@
-# Cloudflare-Edgetunnel
+# Cloudflare-Edgetunnel — 本地 Web 部署向导
 
 <p align="center">
-  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue.svg">
+  <a href="NOTICE.md"><img alt="License: MIT + GPL-2.0" src="https://img.shields.io/badge/license-MIT_%2B_GPL--2.0-blue.svg"></a>
   <img alt="Deploys to Cloudflare Pages" src="https://img.shields.io/badge/deploys_to-Cloudflare_Pages-f6821c?logo=cloudflare&logoColor=white">
 </p>
 
-给 [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) 包了一层本地 Web 界面，填个表就能把 VLESS+WS+TLS 节点部署到 Cloudflare Pages 上——永久免费、绑自己的域名，还会自动帮你测速挑出最快的 CF IP。
+面向已有 Cloudflare 托管域名的用户，通过本地 Web 向导将 [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) 的 VLESS+WS+TLS 节点部署到 Cloudflare Pages，自动配置 Pages、KV 与自定义域名，并生成 Clash 订阅链接。
+
+**English:** A local web GUI for deploying cmliu/edgetunnel to Cloudflare Pages, with Pages/KV/custom-domain setup, TLS-latency IP selection, and Clash subscriptions.
+
+工具开源；Cloudflare 资源的费用与限制以账号套餐及平台规则为准，域名需自行准备。
+
+## 界面演示
 
 <p align="center">
   <img src="https://github.com/Royo-Qiao/Cloudflare-Edgetunnel/releases/download/v1.0.0/demo.webp" width="800" alt="Cloudflare-Edgetunnel Web 向导界面演示">
@@ -13,10 +19,10 @@
 
 ## 能做什么
 
-- 网页填表，5 步走完部署（认证 → 配置域名/UUID → 部署 → 优选 IP → 拿订阅链接），不用记命令
-- 自动建 KV、建 Pages 项目、绑域名、签证书
-- 对 ~320 个 Cloudflare IP 做 TCP 测速，把最快的 30 个写进订阅，减少握手延迟
-- 部署完直接给订阅链接，Clash导入后可直接用
+- 部署流程由本地 Web 向导完成：认证 → 配置域名/UUID → 部署 → 优选 IP → 获取订阅链接
+- 自动创建 KV 与 Pages 项目，并配置自定义域名和 DNS
+- 从 320 个候选 Cloudflare IP 中，按当前网络下携带节点域名 SNI 的 TLS 建连耗时排序，将至多 30 个可连接地址写入订阅配置；此测量不代表下载吞吐或代理全链路速度
+- 生成 Clash 订阅链接；导入客户端后检查节点连接状态
 
 ## 前置准备
 
@@ -49,14 +55,24 @@ npm start
 不想用界面，命令行也能直接部署：
 
 ```bash
-CF_API_TOKEN=xxxxx node scripts/deploy-cli.mjs --zone yourdomain.com --subdomain cloudflare-edgetunnel
+CF_API_TOKEN=xxxxx node scripts/deploy-cli.mjs --zone=yourdomain.com --subdomain=cloudflare-edgetunnel
 ```
+
+将 `xxxxx` 和 `yourdomain.com` 替换为自己的 Token 与域名。所有带值参数使用 `--参数=值` 格式。
 
 参数：
 - `--zone` 域名，必填
 - `--subdomain` 子域，默认 `cloudflare-edgetunnel`
 - `--uuid` 自定义 UUID，不填就随机生成
-- `--optimize` 部署完顺便测速优选
+- `--optimize` 部署完进行 TLS 建连延迟优选
+
+重新部署已有节点时，CLI 未指定 `--uuid` 会生成新 UUID；请显式传入原 UUID，或使用会尝试读取现有 UUID 的 Web 向导。
+
+### 完成后检查
+
+- 在 Cloudflare 控制台确认 Pages 自定义域状态。
+- 将生成的订阅链接导入客户端，并确认节点可以连接。
+- 保存部署时使用的域名、UUID 与订阅信息，重新部署前先核对。
 
 ## 工作原理
 
@@ -77,26 +93,26 @@ CF_API_TOKEN=xxxxx node scripts/deploy-cli.mjs --zone yourdomain.com --subdomain
 几个关键点：
 
 - `_worker.js` 不放进仓库，每次部署都从 edgetunnel 上游拉最新版（国内访问不了自动切镜像）
-- 优选 IP 靠 `net.createConnection` 实测 TCP 延迟，结果写进 KV 的 `ADD.txt`，同时把 `config.json` 的「随机IP」关掉
-- **每个子域一套独立资源**：Pages 项目 `edt-pages-<子域名>` + KV 命名空间 `edt-kv-<子域名>`，换子域部署互不干扰
+- Web 和 CLI 入口都使用携带节点域名 SNI 的 TLS 建连测试，默认对每个 IP 测两次并取较小耗时；排序结果写进 KV 的 `ADD.txt`，同时关闭 `config.json` 的「随机IP」
+- **资源按子域标签命名**：Pages 项目 `edt-pages-<子域标签>` + KV 命名空间 `edt-kv-<子域标签>`。不同标签对应不同资源；同一账号跨主域复用相同标签时，应先核查资源复用。
 
 
 ## 常见踩坑
 
-**⚠️ 换子域部署会顶掉旧订阅吗？不会。**
+**⚠️ 换子域标签或重新部署时，如何保留旧订阅？**
 
-每个子域对应一个独立的 Pages 项目（命名规则：`edt-pages-<子域名>`）和独立的 KV 命名空间（`edt-kv-<子域名>`），UUID、节点配置、优选 IP 完全隔离，互不干扰。
+资源名只包含子域标签，不包含主域。使用不同标签会对应不同的 Pages/KV 资源；同一账号下跨主域使用相同标签时，不应假定资源完全隔离。
 
 - 同一个子域重新部署：向导第 2 步会自动读取该子域对应项目的 UUID 并预填沿用，**不会擅自生成新 UUID**
 - 网络不通时读不到已部署 UUID，工具会生成新 UUID 并弹警告——**这种情况下别直接部署**，检查网络后重进该步，否则可能顶掉在用订阅
-- 不同子域之间完全独立，换个新子域部署就是一套全新的节点
+- 换成不同的子域标签会使用不同资源；已有标签重新部署前，先核对 UUID 与订阅配置
 
 
 **⚠️ 部署时 fetch failed - 网络问题**
 
 部署过程中如遇报错 `fetch failed` / `UND_ERR_CONNECT_TIMEOUT`，请检查本地是否能连上 `api.cloudflare.com`。
 
-工具已内置「直连失败自动走本地代理」兜底（读 `HTTP_PROXY` 等环境变量），如果开着代理会自动切换。wrangler 部署会**直连/代理交替重试多次**（间隔 2.5s
+工具会读取 `HTTP_PROXY` 等环境变量；存在本地代理配置时，wrangler 在网络错误后交替尝试直连和代理，每次重试间隔 2.5 秒。没有代理配置时仅重试直连；业务错误不会通过切换网络重试。
 
 
 ## 进阶
