@@ -7,9 +7,16 @@
 
 面向已有 Cloudflare 托管域名的用户，通过本地 Web 向导将 [cmliu/edgetunnel](https://github.com/cmliu/edgetunnel) 的 VLESS+WS+TLS 节点部署到 Cloudflare Pages，自动配置 Pages、KV 与自定义域名，并生成 Clash 订阅链接。
 
-**English:** A local web GUI for deploying cmliu/edgetunnel to Cloudflare Pages, with Pages/KV/custom-domain setup, TLS-latency IP selection, and Clash subscriptions.
+**English:** A local web GUI for deploying cmliu/edgetunnel to Cloudflare Pages, with Pages/KV/custom-domain setup, TLS-latency IP selection, and Clash subscriptions. See the [English setup and troubleshooting guide](docs/README.en.md).
 
 工具开源；Cloudflare 资源的费用与限制以账号套餐及平台规则为准，域名需自行准备。
+
+## 按问题阅读
+
+- **怎样用本地 Web 界面部署 edgetunnel？** 从[前置准备](#前置准备)和[快速开始](#快速开始)进入。
+- **命令行部署需要哪些参数？** 见[CLI 示例与完成后检查](#快速开始)，重新部署时核对原 UUID。
+- **优选 IP 是否等于代理网速？** 见[工作原理](#工作原理)：测的是带 SNI 的 TLS 建连延迟，不是吞吐或全链路速度。
+- **怎样避免重新部署破坏旧订阅？** 见[常见踩坑](#常见踩坑)，区分子域标签、资源复用与 UUID。
 
 ## 界面演示
 
